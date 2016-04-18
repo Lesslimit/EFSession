@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>EFSession</RootNamespace>
     <AssemblyName>EFSession</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
@@ -37,23 +37,75 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <OutputPath>bin\Debug\</OutputPath>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <OutputPath>bin\Release\</OutputPath>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="src\Contracts\ICanPreserveConnection.cs" />
+    <Compile Include="src\Contracts\IConnectionStringBuilder.cs" />
+    <Compile Include="src\Contracts\IDbContextFactory.cs" />
+    <Compile Include="src\Contracts\IDbContextProvider.cs" />
+    <Compile Include="src\Contracts\ISchemaDependentContext.cs" />
+    <Compile Include="src\Contracts\ISqlServerConnectionStringBuilder.cs" />
+    <Compile Include="src\DataStructures\Collections\HashStack.cs" />
+    <Compile Include="src\DbContextProvider.cs" />
+    <Compile Include="src\Emit\Contracts\IDymanicObjectCreator.cs" />
+    <Compile Include="src\Emit\DynamicReflectionDelegateFactory.cs" />
+    <Compile Include="src\Emit\ReflectionDelegateFactory.cs" />
+    <Compile Include="src\Enums\PrimitiveTypeCode.cs" />
+    <Compile Include="src\Extensions\DbContextExtensions.cs" />
+    <Compile Include="src\Extensions\ExceptionsExtension.cs" />
+    <Compile Include="src\Extensions\ILGeneratorExtension.cs" />
+    <Compile Include="src\Extensions\TypeExtensions.cs" />
+    <Compile Include="src\Interceptors\DbConnectionInterceptor.cs" />
+    <Compile Include="src\Queries\Contracts\IQuery.cs" />
+    <Compile Include="src\Queries\Contracts\IQueryFilter.cs" />
+    <Compile Include="src\Queries\DatabaseQuery.cs" />
+    <Compile Include="src\Queries\Filters\QueryFilter.cs" />
+    <Compile Include="src\Queries\QueryObject.cs" />
+    <Compile Include="src\SchemaDbModelCacheKey.cs" />
+    <Compile Include="src\Schema\Parameters\Contracts\ISchemaParameter.cs" />
+    <Compile Include="src\Schema\Parameters\EmptySchemaCriteria.cs" />
+    <Compile Include="src\Schema\Parameters\SchemaNameCriteria.cs" />
+    <Compile Include="src\Schema\Resolvers\Contracts\IAsyncSchemaResolver.cs" />
+    <Compile Include="src\Schema\Resolvers\Contracts\ISchemaResolver.cs" />
+    <Compile Include="src\Schema\Resolvers\EmptySchemaResolver.cs" />
+    <Compile Include="src\Schema\Resolvers\SchemaNameSchemaResolver.cs" />
+    <Compile Include="src\Schema\SchemaConstants.cs" />
+    <Compile Include="src\SqlExecutors\Contracts\ISqlExecutor.cs" />
+    <Compile Include="src\SqlExecutors\SqlServerSqlExecutor.cs" />
+    <Compile Include="src\StoredProcedures\Contracts\ISqlParametersManager.cs" />
+    <Compile Include="src\StoredProcedures\Results\AnonymousSpResult.cs" />
+    <Compile Include="src\Session\Contracts\IDbSession.cs" />
+    <Compile Include="src\Session\Contracts\IDbSessionManager.cs" />
+    <Compile Include="src\Session\Contracts\ISeedSession.cs" />
+    <Compile Include="src\Session\Contracts\ISession.cs" />
+    <Compile Include="src\StoredProcedures\Contracts\ISpResult.cs" />
+    <Compile Include="src\StoredProcedures\Results\DbRawSqlQuerySpResult.cs" />
+    <Compile Include="src\Session\DbSession.cs" />
+    <Compile Include="src\Session\DbSessionManager.cs" />
+    <Compile Include="src\Session\HasSchemaParameterAttribute.cs" />
+    <Compile Include="src\Session\SessionHint.cs" />
+    <Compile Include="src\StoredProcedures\SqlParametersManager.cs" />
+    <Compile Include="src\StoredProcedures\StoredProceduresContainer.cs" />
+    <Compile Include="src\SqlServerConnectionStringBuilder.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="App.config" />
     <None Include="NuGetPackage.ps1" />
     <None Include="NuGetSetup.ps1" />
     <None Include="NuGet.exe" />
     <None Include="NuGet.config" />
     <None Include="Package.nuspec" />
+    <None Include="packages.config" />
     <None Include="tools\init.ps1" />
     <None Include="tools\install.ps1" />
     <None Include="tools\uninstall.ps1" />
@@ -61,7 +113,23 @@
   <ItemGroup>
     <Folder Include="content\" />
     <Folder Include="lib\" />
-    <Folder Include="src\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="LinqKit, Version=1.1.3.1, Culture=neutral, PublicKeyToken=bc217f8844052a91, processorArchitecture=MSIL">
+      <HintPath>..\packages\LinqKit.1.1.3.1\lib\net45\LinqKit.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Data" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
