@@ -1,0 +1,172 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{0451BAEF-DF2E-4B98-8644-94EE9415E389}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>EFSession</RootNamespace>
+    <AssemblyName>EFSession</AssemblyName>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <OutputPath>bin\Debug\</OutputPath>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <OutputPath>bin\Release\</OutputPath>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="src\Contracts\ICanPreserveConnection.cs" />
+    <Compile Include="src\Contracts\IConnectionStringBuilder.cs" />
+    <Compile Include="src\Contracts\IDbContext.cs" />
+    <Compile Include="src\Contracts\IDbContextFactory.cs" />
+    <Compile Include="src\Contracts\IDbContextProvider.cs" />
+    <Compile Include="src\Contracts\ISchemaDependentContext.cs" />
+    <Compile Include="src\Contracts\ISqlServerConnectionStringBuilder.cs" />
+    <Compile Include="src\DataStructures\Collections\HashStack.cs" />
+    <Compile Include="src\DbContextBase.cs" />
+    <Compile Include="src\DbContextProvider.cs" />
+    <Compile Include="src\Emit\Contracts\IDymanicObjectCreator.cs" />
+    <Compile Include="src\Emit\DynamicReflectionDelegateFactory.cs" />
+    <Compile Include="src\Emit\ReflectionDelegateFactory.cs" />
+    <Compile Include="src\Enums\PrimitiveTypeCode.cs" />
+    <Compile Include="src\Extensions\DbConnectionExtension.cs" />
+    <Compile Include="src\Extensions\ExceptionsExtension.cs" />
+    <Compile Include="src\Extensions\ExpressionExtensions.cs" />
+    <Compile Include="src\Extensions\ILGeneratorExtension.cs" />
+    <Compile Include="src\Extensions\ObjectContextExtension.cs" />
+    <Compile Include="src\Extensions\SqlParameterEnumerableExt.cs" />
+    <Compile Include="src\Extensions\TypeExtensions.cs" />
+    <Compile Include="src\Interceptors\DbConnectionInterceptor.cs" />
+    <Compile Include="src\Queries\Contracts\IDatabaseQuery.cs" />
+    <Compile Include="src\Queries\Contracts\IQuery.cs" />
+    <Compile Include="src\Queries\Contracts\IQueryFilter.cs" />
+    <Compile Include="src\Queries\Contracts\IQueryFilterProvider.cs" />
+    <Compile Include="src\Queries\DatabaseQuery.cs" />
+    <Compile Include="src\Queries\Filters\QueryFilter.cs" />
+    <Compile Include="src\Queries\QueryObject.cs" />
+    <Compile Include="src\SchemaDbModelCacheKey.cs" />
+    <Compile Include="src\Schema\Parameters\Contracts\ISchemaParameter.cs" />
+    <Compile Include="src\Schema\Parameters\EmptySchemaCriteria.cs" />
+    <Compile Include="src\Schema\Parameters\SchemaNameCriteria.cs" />
+    <Compile Include="src\Schema\Resolvers\Contracts\IAsyncSchemaResolver.cs" />
+    <Compile Include="src\Schema\Resolvers\Contracts\ISchemaResolver.cs" />
+    <Compile Include="src\Schema\Resolvers\EmptySchemaResolver.cs" />
+    <Compile Include="src\Schema\Resolvers\SchemaNameSchemaResolver.cs" />
+    <Compile Include="src\Schema\SchemaConstants.cs" />
+    <Compile Include="src\Session\Contracts\IDbExecutionPolicy.cs" />
+    <Compile Include="src\Session\Contracts\IDbQueryProvider.cs" />
+    <Compile Include="src\Session\Contracts\IDbSessionProvider.cs" />
+    <Compile Include="src\Session\Contracts\ISeedSessionProvider.cs" />
+    <Compile Include="src\Session\DbQueryProvider.cs" />
+    <Compile Include="src\Session\DbSessionProvider.cs" />
+    <Compile Include="src\Session\SeedSessionProvider.cs" />
+    <Compile Include="src\SqlExecutors\Contracts\ISqlExecutor.cs" />
+    <Compile Include="src\SqlExecutors\SqlServerSqlExecutor.cs" />
+    <Compile Include="src\StoredProcedures\Contracts\ISqlParametersManager.cs" />
+    <Compile Include="src\StoredProcedures\Results\AnonymousSpResult.cs" />
+    <Compile Include="src\Session\Contracts\IDbSession.cs" />
+    <Compile Include="src\Session\Contracts\IDbSessionManager.cs" />
+    <Compile Include="src\Session\Contracts\IDbSeedSession.cs" />
+    <Compile Include="src\Session\Contracts\ISession.cs" />
+    <Compile Include="src\StoredProcedures\Contracts\ISpResult.cs" />
+    <Compile Include="src\StoredProcedures\Results\DbRawSqlQuerySpResult.cs" />
+    <Compile Include="src\Session\DbSession.cs" />
+    <Compile Include="src\Session\DbSessionManager.cs" />
+    <Compile Include="src\Session\HasSchemaParameterAttribute.cs" />
+    <Compile Include="src\Session\SessionHint.cs" />
+    <Compile Include="src\StoredProcedures\SqlParametersManager.cs" />
+    <Compile Include="src\StoredProcedures\StoredProceduresContainer.cs" />
+    <Compile Include="src\SqlServerConnectionStringBuilder.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="NuGetPackage.ps1" />
+    <None Include="NuGetSetup.ps1" />
+    <None Include="NuGet.exe" />
+    <None Include="NuGet.config" />
+    <None Include="Package.nuspec" />
+    <None Include="packages.config" />
+    <None Include="tools\init.ps1" />
+    <None Include="tools\install.ps1" />
+    <None Include="tools\uninstall.ps1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="content\" />
+    <Folder Include="lib\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="LinqKit, Version=1.1.3.1, Culture=neutral, PublicKeyToken=bc217f8844052a91, processorArchitecture=MSIL">
+      <HintPath>..\packages\LinqKit.1.1.3.1\lib\net45\LinqKit.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Polly, Version=4.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Polly.4.2.0\lib\net45\Polly.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Data" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>-->
+  <Target Name="AfterBuild">
+    <Delete Files=".\NuGet.log" />
+    <Exec WorkingDirectory="$(MSBuildProjectDirectory)" Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' " ContinueOnError="True" Command="PowerShell.exe -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Unrestricted -Command &quot;&amp; {.\NuGetPackage.ps1} &quot;" IgnoreExitCode="true">
+      <Output TaskParameter="ExitCode" PropertyName="ExitCode" />
+    </Exec>
+    <Exec WorkingDirectory="$(MSBuildProjectDirectory)" Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' " ContinueOnError="True" Command="PowerShell.exe -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -Command &quot;&amp; {.\NuGetPackage.ps1 -Publish} &quot;" IgnoreExitCode="true">
+      <Output TaskParameter="ExitCode" PropertyName="ExitCode" />
+    </Exec>
+    <Message Text=" " Importance="High" />
+    <Message Text="Build Exit Code: $(ExitCode)" Importance="High" />
+    <Error Text="Encountered error(s) when creating package.%0aCheck the NuGet.log file for details." Condition=" '$(ExitCode)' == '1' " File="NuGet.log" />
+    <Error Text="Created package but encountered error(s) when trying to publish it.%0aCheck the NuGet.log file for details." Condition=" '$(Configuration)|$(Platform)|$(ExitCode)' == 'Release|AnyCPU|2' " File="NuGet.log" />
+    <Message Text="SUCCESS: Created package." Condition=" '$(Configuration)|$(Platform)|$(ExitCode)' == 'Debug|AnyCPU|0' " Importance="High" />
+    <Message Text="SUCCESS: Published package." Condition=" '$(Configuration)|$(Platform)|$(ExitCode)' == 'Release|AnyCPU|0' " Importance="High" />
+  </Target>
+</Project>
