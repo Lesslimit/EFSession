@@ -1,19 +1,19 @@
 using System;
 using System.Collections.Generic;
-using System.Data.Entity.Infrastructure;
 using System.Data.SqlClient;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using EFSession.Queries;
 using EFSession.StoredProcedures;
 using IsolationLevel = System.Data.IsolationLevel;
 
 namespace EFSession.Session
 {
-    public interface ISeedSession<out TSession> : IDisposable
-        where TSession : ISession
+    public interface IDbSeedSession<out TSession> : IDisposable
+        where TSession : IDbSession
     {
-        TSession Session { get; }
+        TSession InnerSession { get; }
 
         IEnumerable<IDbSession> Offsprings { get; }
 
@@ -27,8 +27,6 @@ namespace EFSession.Session
 
         TEntity AsDeleted<TEntity>(TEntity entity) where TEntity : class;
 
-        IEnumerable<DbPropertyValues> OriginalValues<TEntity>() where TEntity : class;
-
         Task<int> SaveChangesAsync(bool inTransaction = true,
                                    IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
                                    CancellationToken cancellationToken = default(CancellationToken));
@@ -39,7 +37,7 @@ namespace EFSession.Session
 
         bool IsProxy<TEntity>(TEntity entity) where TEntity : class;
 
-        void SetCommandTimeout(TimeSpan? timeout);
+        void SetTimeout(TimeSpan? timeout);
 
         Task SpNoResultAsync(Expression<Func<StoredProceduresContainer, string>> expressionToName, object parameters = null);
 
@@ -54,7 +52,5 @@ namespace EFSession.Session
         Task SqlCommandAsync(string command, object parameters = null);
 
         void DisposeOffsprings(bool closeConnection = true);
-
-        Task SaveChangesBulkAsync();
     }
 }

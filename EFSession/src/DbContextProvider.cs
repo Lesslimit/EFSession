@@ -3,36 +3,33 @@ using System.Data.Entity;
 
 namespace EFSession
 {
-    public class DbContextProvider<TDbContext> : IDbContextProvider where TDbContext : DbContext
+    public class DbContextProvider<TDbContext> : IDbContextProvider<TDbContext> where TDbContext : IDbContext
     {
         #region Fields
 
         private readonly IDbContextFactory<TDbContext> dbContextFactory;
         private readonly ISqlServerConnectionStringBuilder connStringBuilder;
-        private readonly IConfig config;
 
         #endregion Fields
 
         public DbContextProvider(IDbContextFactory<TDbContext> dbContextFactory,
-                                 ISqlServerConnectionStringBuilder connStringBuilder,
-                                 IConfig config)
+                                 ISqlServerConnectionStringBuilder connStringBuilder)
         {
             this.dbContextFactory = dbContextFactory;
             this.connStringBuilder = connStringBuilder;
-            this.config = config;
         }
 
-        public DbContext ForSchema(string schema)
+        public TDbContext ForSchema(string schema)
         {
             return dbContextFactory.Create(connStringBuilder.BuildFromSchema(schema), schema);
         }
 
-        public DbContext ForDbName(string dbName)
+        public TDbContext ForDbName(string dbName)
         {
-            return dbContextFactory.Create(connStringBuilder.BuildFromDbName(dbName), config.GetStringOrThrow("DefaultDbSchema"));
+            return dbContextFactory.Create(connStringBuilder.BuildFromDbName(dbName), "dbo");
         }
 
-        public DbContext ForConnection(string schema, DbConnection connection)
+        public TDbContext ForConnection(string schema, DbConnection connection)
         {
             return dbContextFactory.Create(schema, connection, false);
         }

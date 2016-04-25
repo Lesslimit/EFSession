@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>EFSession</RootNamespace>
     <AssemblyName>EFSession</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
@@ -51,23 +51,30 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="src\Contracts\ICanPreserveConnection.cs" />
     <Compile Include="src\Contracts\IConnectionStringBuilder.cs" />
+    <Compile Include="src\Contracts\IDbContext.cs" />
     <Compile Include="src\Contracts\IDbContextFactory.cs" />
     <Compile Include="src\Contracts\IDbContextProvider.cs" />
     <Compile Include="src\Contracts\ISchemaDependentContext.cs" />
     <Compile Include="src\Contracts\ISqlServerConnectionStringBuilder.cs" />
     <Compile Include="src\DataStructures\Collections\HashStack.cs" />
+    <Compile Include="src\DbContextBase.cs" />
     <Compile Include="src\DbContextProvider.cs" />
     <Compile Include="src\Emit\Contracts\IDymanicObjectCreator.cs" />
     <Compile Include="src\Emit\DynamicReflectionDelegateFactory.cs" />
     <Compile Include="src\Emit\ReflectionDelegateFactory.cs" />
     <Compile Include="src\Enums\PrimitiveTypeCode.cs" />
-    <Compile Include="src\Extensions\DbContextExtensions.cs" />
+    <Compile Include="src\Extensions\DbConnectionExtension.cs" />
     <Compile Include="src\Extensions\ExceptionsExtension.cs" />
+    <Compile Include="src\Extensions\ExpressionExtensions.cs" />
     <Compile Include="src\Extensions\ILGeneratorExtension.cs" />
+    <Compile Include="src\Extensions\ObjectContextExtension.cs" />
+    <Compile Include="src\Extensions\SqlParameterEnumerableExt.cs" />
     <Compile Include="src\Extensions\TypeExtensions.cs" />
     <Compile Include="src\Interceptors\DbConnectionInterceptor.cs" />
+    <Compile Include="src\Queries\Contracts\IDatabaseQuery.cs" />
     <Compile Include="src\Queries\Contracts\IQuery.cs" />
     <Compile Include="src\Queries\Contracts\IQueryFilter.cs" />
+    <Compile Include="src\Queries\Contracts\IQueryFilterProvider.cs" />
     <Compile Include="src\Queries\DatabaseQuery.cs" />
     <Compile Include="src\Queries\Filters\QueryFilter.cs" />
     <Compile Include="src\Queries\QueryObject.cs" />
@@ -80,13 +87,20 @@
     <Compile Include="src\Schema\Resolvers\EmptySchemaResolver.cs" />
     <Compile Include="src\Schema\Resolvers\SchemaNameSchemaResolver.cs" />
     <Compile Include="src\Schema\SchemaConstants.cs" />
+    <Compile Include="src\Session\Contracts\IDbExecutionPolicy.cs" />
+    <Compile Include="src\Session\Contracts\IDbQueryProvider.cs" />
+    <Compile Include="src\Session\Contracts\IDbSessionProvider.cs" />
+    <Compile Include="src\Session\Contracts\ISeedSessionProvider.cs" />
+    <Compile Include="src\Session\DbQueryProvider.cs" />
+    <Compile Include="src\Session\DbSessionProvider.cs" />
+    <Compile Include="src\Session\SeedSessionProvider.cs" />
     <Compile Include="src\SqlExecutors\Contracts\ISqlExecutor.cs" />
     <Compile Include="src\SqlExecutors\SqlServerSqlExecutor.cs" />
     <Compile Include="src\StoredProcedures\Contracts\ISqlParametersManager.cs" />
     <Compile Include="src\StoredProcedures\Results\AnonymousSpResult.cs" />
     <Compile Include="src\Session\Contracts\IDbSession.cs" />
     <Compile Include="src\Session\Contracts\IDbSessionManager.cs" />
-    <Compile Include="src\Session\Contracts\ISeedSession.cs" />
+    <Compile Include="src\Session\Contracts\IDbSeedSession.cs" />
     <Compile Include="src\Session\Contracts\ISession.cs" />
     <Compile Include="src\StoredProcedures\Contracts\ISpResult.cs" />
     <Compile Include="src\StoredProcedures\Results\DbRawSqlQuerySpResult.cs" />
@@ -125,6 +139,10 @@
     </Reference>
     <Reference Include="LinqKit, Version=1.1.3.1, Culture=neutral, PublicKeyToken=bc217f8844052a91, processorArchitecture=MSIL">
       <HintPath>..\packages\LinqKit.1.1.3.1\lib\net45\LinqKit.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Polly, Version=4.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Polly.4.2.0\lib\net45\Polly.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />

@@ -7,8 +7,8 @@ namespace EFSession.Session
     {
         bool HasAliveSessions { get; }
 
-        ISeedSession<IDbSession> Start(string schema, SessionHint sessionHint = SessionHint.None);
+        IDbSeedSession<IDbSession> Start(string schema, SessionHint sessionHint = SessionHint.None);
 
-        ISeedSession<IDbSession> Start(ISchemaCriteria schema, SessionHint sessionHint = SessionHint.None);
+        IDbSeedSession<IDbSession> Start(ISchemaCriteria schema, SessionHint sessionHint = SessionHint.None);
     }
 }

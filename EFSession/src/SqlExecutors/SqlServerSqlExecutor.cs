@@ -5,6 +5,8 @@ using System.Data.SqlClient;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using EFSession.Extensions;
+using EFSession.Session;
 using EFSession.StoredProcedures;
 
 namespace EFSession.SqlExecutors
@@ -25,7 +27,7 @@ namespace EFSession.SqlExecutors
             set
             {
                 // ReSharper disable once CollectionNeverQueried.Local
-                SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder(value)
+                var builder = new SqlConnectionStringBuilder(value)
                     {
                         AsynchronousProcessing = true
                     };
@@ -47,8 +49,8 @@ namespace EFSession.SqlExecutors
             ConnectionString = connectionString;
         }
 
-        public SqlServerPlainAdoSqlExecutor(IConfig config, ISqlParametersManager sqlParametersManager, IDbExecutionPolicy execPolicy)
-            : this(config.GetStringOrThrow("DatabaseConnectionString"), sqlParametersManager, execPolicy)
+        public SqlServerPlainAdoSqlExecutor(ISqlParametersManager sqlParametersManager, IDbExecutionPolicy execPolicy)
+            : this("DatabaseConnectionString", sqlParametersManager, execPolicy)
         {
         }
 
@@ -113,7 +115,7 @@ namespace EFSession.SqlExecutors
                                                            TimeSpan? timeout = null, CancellationToken cancellationToken = new CancellationToken(),
                                                            params SqlParameter[] output)
         {
-            return await SpAsync(expressionToName, null, converter, timeout, cancellationToken, output);
+            return await SpAsync(expressionToName, null, converter, timeout, cancellationToken, output).ConfigureAwait(false);
         }
 
         public async Task<IEnumerable<TResult>> SpAsync<TResult>(Expression<Func<StoredProceduresContainer, string>> expressionToName,
@@ -127,14 +129,14 @@ namespace EFSession.SqlExecutors
                 throw new ArgumentException(nameof(expressionToName));
             }
 
-            return await SpAsync(spName, parameters, converter, timeout, cancellationToken, output);
+            return await SpAsync(spName, parameters, converter, timeout, cancellationToken, output).ConfigureAwait(false);
         }
 
         public async Task<IEnumerable<TResult>> SpAsync<TResult>(string spName, Func<IDataRecord, int, TResult> converter,
                                                            TimeSpan? timeout = null, CancellationToken cancellationToken = new CancellationToken(),
                                                            params SqlParameter[] output)
         {
-            return await SpAsync(spName, null, converter, timeout, cancellationToken, output);
+            return await SpAsync(spName, null, converter, timeout, cancellationToken, output).ConfigureAwait(false);
         }
 
         public async Task<IEnumerable<TResult>> SpAsync<TResult>(string spName, object parameters, Func<IDataRecord, int, TResult> converter,
@@ -169,7 +171,7 @@ namespace EFSession.SqlExecutors
                         return results;
                     }
                 }
-            });
+            }).ConfigureAwait(false);
         }
 
         private void SetTimeout(int seconds)

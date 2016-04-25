@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using EFSession.Enums;
 
 namespace EFSession.Extensions
@@ -119,6 +121,13 @@ namespace EFSession.Extensions
         public static bool IsNullable(this Type type)
         {
             return (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>));
+        }
+
+        public static ConstructorInfo GetParametrizedConstructor(this Type objectType)
+        {
+            IList<ConstructorInfo> constructors = objectType.GetConstructors(BindingFlags.Public | BindingFlags.Instance).ToList();
+
+            return constructors.Count == 1 ? constructors[0] : null;
         }
     }
 }

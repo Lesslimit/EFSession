@@ -9,11 +9,11 @@ namespace EFSession
         private readonly string originalConnectionString;
         private readonly string defaultSchema;
 
-        public SqlServerConnectionStringBuilder(IConfig config)
-            : this(config.GetStringOrThrow("DatabaseConnectionString"),
-                  config.GetStringOrThrow("DefaultDbSchema"))
-        {
-        }
+//        public SqlServerConnectionStringBuilder(IConfig config)
+//            : this(config.GetStringOrThrow("DatabaseConnectionString"),
+//                  config.GetStringOrThrow("DefaultDbSchema"))
+//        {
+//        }
 
         public SqlServerConnectionStringBuilder(string connectionString, string defaultSchema)
         {

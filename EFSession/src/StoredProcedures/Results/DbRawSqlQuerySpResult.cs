@@ -3,16 +3,20 @@ using System.Collections.Generic;
 using System.Data.Entity.Infrastructure;
 using System.Threading;
 using System.Threading.Tasks;
+using EFSession.Session;
 
 namespace EFSession.StoredProcedures
 {
     public class DbRawSqlQuerySpResult<T> : ISpResult<T>
     {
         private readonly DbRawSqlQuery<T> dbRawSqlQuery;
+        private readonly IDbExecutionPolicy execPolicy;
 
-        public DbRawSqlQuerySpResult(DbRawSqlQuery<T> dbRawSqlQuery)
+        public DbRawSqlQuerySpResult(DbRawSqlQuery<T> dbRawSqlQuery,
+                                     IDbExecutionPolicy execPolicy)
         {
             this.dbRawSqlQuery = dbRawSqlQuery;
+            this.execPolicy = execPolicy;
         }
 
         #region Single*Async

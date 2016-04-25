@@ -5,27 +5,18 @@ using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Linq.Expressions;
-using EFSession.Extensions;
 using LinqKit;
 
 namespace EFSession.Queries
 {
-    public interface IDatabaseQuery<TEntity> : IQuery<TEntity>, IDbAsyncEnumerable<TEntity>
-        where TEntity : class
-    {
-        IQuery<TEntity> ForId<TId>(TId id);
-
-        IQuery<TEntity> DoNotTrack();
-    }
-
     public class DatabaseQuery<TEntity> : IDatabaseQuery<TEntity> where TEntity : class
     {
         #region Fields
 
         private IDbSet<TEntity> dbSet;
         private IQueryable<TEntity> queryable;
-        private readonly DbContext dbContext;
-        private readonly IDependencyResolver dependencyResolver;
+        private readonly IDbContext dbContext;
+        private readonly IQueryFilterProvider queryFilterProvider;
 
         #endregion Fields
 
@@ -51,10 +42,10 @@ namespace EFSession.Queries
 
         #endregion Properties
 
-        public DatabaseQuery(DbContext dbContext, IDependencyResolver dependencyResolver)
+        public DatabaseQuery(IDbContext dbContext, IQueryFilterProvider queryFilterProvider)
         {
             this.dbContext = dbContext;
-            this.dependencyResolver = dependencyResolver;
+            this.queryFilterProvider = queryFilterProvider;
         }
 
         #region IQuery<TEntity>
@@ -63,7 +54,7 @@ namespace EFSession.Queries
             where TQFilter : IQueryFilter<TEntity>
         {
             Queryable = Queryable.AsExpandable()
-                                 .Where(queryFilter(dependencyResolver.Resolve<TQFilter>()).Expression);
+                                 .Where(queryFilter(queryFilterProvider.Get<TEntity, TQFilter>()).Expression);
 
             return this;
         }
@@ -72,7 +63,7 @@ namespace EFSession.Queries
             where TQFilter : IQueryFilter<TEntity>
         {
             Queryable = Queryable.AsExpandable()
-                                 .Where(filterExpression(dependencyResolver.Resolve<TQFilter>()));
+                                 .Where(filterExpression(queryFilterProvider.Get<TEntity, TQFilter>()));
 
             return this;
         }

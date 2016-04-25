@@ -9,6 +9,7 @@ using System.Data.Entity.Infrastructure;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Runtime.Remoting.Messaging;
 using System.Threading;
 using System.Threading.Tasks;
 using EFSession.Emit.Contracts;
@@ -20,19 +21,25 @@ using IsolationLevel = System.Data.IsolationLevel;
 // ReSharper disable InconsistentlySynchronizedField
 namespace EFSession.Session
 {
-    public class DbSession : ISeedSession<IDbSession>, IDbSession
+    public class DbSession : IDbSeedSession<IDbSession>, IDbSession
     {
+        private readonly IDbContextProvider<IDbContext> dbContextProvider;
         private readonly ISqlParametersManager sqlParametersManager;
+
+        private const string LogicalContextKey = "SuspendExecutionStrategy";
 
         #region Fields
 
-        private IDymanicObjectCreator dymanicObjectCreator;
         private readonly object locker = new object();
-        private readonly ISeedSession<IDbSession> seed;
-        private readonly DbContext dbContext;
-        private readonly IDependencyResolver dependencyResolver;
+
+        private readonly IDymanicObjectCreator dymanicObjectCreator;
+        private readonly IDbSeedSession<IDbSession> dbSeed;
+        private readonly IDbContext dbContext;
         private readonly IDbExecutionPolicy execPolicy;
-        private readonly ConcurrentQueue<KeyValuePair<Owned<IDbSession>, DbContext>> offsprings = new ConcurrentQueue<KeyValuePair<Owned<IDbSession>, DbContext>>();
+        private readonly IDbSessionProvider dbSessionProvider;
+        private readonly IDbQueryProvider dbQueryProvider;
+
+        private readonly ConcurrentQueue<KeyValuePair<IDbSession, IDbContext>> offsprings = new ConcurrentQueue<KeyValuePair<IDbSession, IDbContext>>();
 
         #endregion Fields
 
@@ -54,50 +61,68 @@ namespace EFSession.Session
 
         #region ISeedSession<IDbSession>
 
-        public IDbSession Session => this;
+        public IDbSession InnerSession => this;
 
         public IEnumerable<IDbSession> Offsprings
         {
-            get { return offsprings.Select(kv => kv.Key.Value); }
+            get { return offsprings.Select(kv => kv.Key); }
         }
 
         public bool HasActiveChildren
         {
-            get { return offsprings.Any(cs => cs.Key.Value.IsActive); }
+            get { return offsprings.Any(cs => cs.Key.IsActive); }
         }
 
         #endregion ISeedSession<IDbSession>
 
-        private bool IsSeed => seed == null;
+        private bool IsSeed => dbSeed == null;
 
         public SessionHint Hint { get; private set; }
 
-        public IDymanicObjectCreator DymanicObjectCreator => dymanicObjectCreator ?? (dymanicObjectCreator = dependencyResolver.Resolve<IDymanicObjectCreator>());
+        private static bool SuspendExecutionStrategy
+        {
+            get { return (bool?)CallContext.LogicalGetData(LogicalContextKey) ?? false; }
+            set { CallContext.LogicalSetData(LogicalContextKey, value); }
+        }
 
         #endregion Properties
 
         #region Constructors
 
-        public DbSession(string schema, DbContext dbContext, ISqlParametersManager sqlParametersManager,
-                        IDependencyResolver dependencyResolver, IDbExecutionPolicy execPolicy)
-            : this(schema, dbContext, sqlParametersManager, dependencyResolver, execPolicy, null)
+        public DbSession(string schema,
+                         IDbContext dbContext,
+                         ISqlParametersManager sqlParametersManager,
+                         IDbContextProvider<IDbContext> dbContextProvider,
+                         IDbExecutionPolicy execPolicy,
+                         IDbQueryProvider dbQueryProvider,
+                         IDbSessionProvider dbSessionProvider,
+                         IDymanicObjectCreator dymanicObjectCreator)
+            : this(schema, dbContext, sqlParametersManager, execPolicy, dbQueryProvider, dymanicObjectCreator, null)
         {
+            this.dbContextProvider = dbContextProvider;
+            this.dbSessionProvider = dbSessionProvider;
         }
 
-        public DbSession(string schema, DbContext dbContext, ISqlParametersManager sqlParametersManager,
-                         IDependencyResolver dependencyResolver, IDbExecutionPolicy execPolicy, ISeedSession<IDbSession> seed)
+        public DbSession(string schema,
+                         IDbContext dbContext,
+                         ISqlParametersManager sqlParametersManager,
+                         IDbExecutionPolicy execPolicy,
+                         IDbQueryProvider dbQueryProvider,
+                         IDymanicObjectCreator dymanicObjectCreator,
+                         IDbSeedSession<IDbSession> dbSeed)
         {
-            if (seed == null && !(dbContext is ICanPreserveConnection))
+            if (dbSeed == null)
             {
                 throw new ArgumentException($"DbContext for seed session has to implement {nameof(ICanPreserveConnection)}", nameof(dbContext));
             }
 
             this.Schema = schema;
-            this.seed = seed;
+            this.dbSeed = dbSeed;
             this.dbContext = dbContext;
             this.sqlParametersManager = sqlParametersManager;
-            this.dependencyResolver = dependencyResolver;
             this.execPolicy = execPolicy;
+            this.dbQueryProvider = dbQueryProvider;
+            this.dymanicObjectCreator = dymanicObjectCreator;
         }
 
         #endregion Constructors
@@ -121,40 +146,25 @@ namespace EFSession.Session
 
         public IDbSession Offspring()
         {
-            if (!dependencyResolver.IsRegistered<IDbSession>())
-            {
-                throw new InvalidOperationException($"{nameof(IDbSession)} not registered in IoC");
-            }
-
-            var dbContextProvider = dependencyResolver.Resolve<IDbContextProvider>();
             var offspringContext = dbContextProvider.ForConnection(Schema, dbContext.Database.Connection);
 
             offspringContext.Configuration.EnsureTransactionsForFunctionsAndCommands = false;
             offspringContext.Database.CommandTimeout = dbContext.Database.CommandTimeout;
 
-            var session = dependencyResolver.Resolve<Owned<IDbSession>>(new NamedParameter("schema", Schema),
-                                                                        new TypedParameter(typeof (DbContext), offspringContext),
-                                                                        new TypedParameter(typeof (ISqlParametersManager), sqlParametersManager),
-                                                                        new TypedParameter(typeof (IDependencyResolver), dependencyResolver),
-                                                                        new TypedParameter(typeof (IDbExecutionPolicy), execPolicy),
-                                                                        new TypedParameter(typeof (ISeedSession<IDbSession>), this));
+            var offspringSession = dbSessionProvider.OffspringFor(this, offspringContext);
 
-            offsprings.Enqueue(new KeyValuePair<Owned<IDbSession>, DbContext>(session, offspringContext));
+            offsprings.Enqueue(new KeyValuePair<IDbSession, IDbContext>(offspringSession, offspringContext));
 
-            ((ICanPreserveConnection) dbContext).MarkConnectionAsPreserved();
+            dbContext.MarkConnectionAsPreserved();
 
-            return session.Value.Begin(Hint);
+            return offspringSession.Begin(Hint);
         }
 
         public IDatabaseQuery<TEntity> Query<TEntity>() where TEntity : class
         {
-            if (!dependencyResolver.IsRegistered<IQuery<TEntity>>())
-            {
-                throw new InvalidOperationException($"{nameof(IQuery<TEntity>)} not registered in IoC");
-            }
-
-            var query = dependencyResolver.Resolve<IDatabaseQuery<TEntity>>(new TypedParameter(typeof(DbContext), dbContext),
-                                                                            new TypedParameter(typeof(IDependencyResolver), dependencyResolver));
+            var query = dbQueryProvider.For<TEntity>()
+                                       .UsingContext(dbContext)
+                                       .Create<TEntity>();
 
             if (Hint.HasFlag(SessionHint.NoTracking))
             {
@@ -170,7 +180,7 @@ namespace EFSession.Session
             return query;
         }
 
-        public void SetCommandTimeout(TimeSpan? timeout)
+        public void SetTimeout(TimeSpan? timeout)
         {
             dbContext.Database.CommandTimeout = timeout.HasValue ? new int?(Convert.ToInt32(timeout.Value.TotalSeconds)) : null;
         }
@@ -234,7 +244,7 @@ namespace EFSession.Session
             }
 
             var sqlParameters = sqlParametersManager.PrepareParameters(parameters, output);
-            var objectConstructor = DymanicObjectCreator.CreateParametrizedConstructor(typeof(TResult).GetParametrizedConstructor());
+            var objectConstructor = dymanicObjectCreator.CreateParametrizedConstructor(typeof(TResult).GetParametrizedConstructor());
 
             if (!IsSeed)
             {
@@ -281,11 +291,6 @@ namespace EFSession.Session
             }).ConfigureAwait(false);
 
             DisposeSingleQueried();
-        }
-
-        public IEnumerable<DbPropertyValues> OriginalValues<TEntity>() where TEntity : class
-        {
-            return dbContext.ChangeTracker.Entries<TEntity>().Select(i => i.OriginalValues);
         }
 
         public TEntity AsInserted<TEntity>(TEntity entity) where TEntity : class
@@ -381,7 +386,7 @@ namespace EFSession.Session
 
                     foreach (var e in entitiesArray)
                     {
-                        foreach (var offspringSession in offsprings.Select(kv => kv.Key.Value))
+                        foreach (var offspringSession in offsprings.Select(kv => kv.Key))
                         {
                             offspringSession.Detach(e);
                         }
@@ -391,7 +396,7 @@ namespace EFSession.Session
                 }
                 else
                 {
-                    foreach (var offspringSession in offsprings.Select(kv => kv.Key.Value))
+                    foreach (var offspringSession in offsprings.Select(kv => kv.Key))
                     {
                         offspringSession.Detach(entity);
                     }
@@ -406,11 +411,6 @@ namespace EFSession.Session
         public bool IsProxy<TEntity>(TEntity entity) where TEntity : class
         {
             return entity != null && ObjectContext.GetObjectType(entity.GetType()) != entity.GetType();
-        }
-
-        public async Task SaveChangesBulkAsync()
-        {
-            await execPolicy.ExecuteAsync(() => dbContext.SaveChangesBulkAsync()).ConfigureAwait(false);
         }
 
         public async Task<int> SaveChangesAsync(bool inTransaction = true,
@@ -429,7 +429,7 @@ namespace EFSession.Session
                 {
                     await execPolicy.ExecuteAsync(async () =>
                     {
-                        BrandifyDbConfiguration.SuspendExecutionStrategy = true;
+                        SuspendExecutionStrategy = true;
                         DbContextTransaction transaction = dbContext.Database.BeginTransaction(isolationLevel);
 
                         try
@@ -450,7 +450,7 @@ namespace EFSession.Session
 
                             var sqlException = dbUpdateException?.InnerException?.GetBaseException() as SqlException;
 
-                            if (sqlException != null && sqlException.Errors.Contains(1205) /* Deadlock */)
+                            if (sqlException != null && sqlException.Errors.Cast<SqlError>().Any(sqlError => sqlError.Number == 1205) /* Deadlock */)
                             {
                                 throw sqlException; //Transaction cannot be rollbacked when deadlock has happened
                             }
@@ -461,7 +461,7 @@ namespace EFSession.Session
                         finally
                         {
                             transaction.Dispose();
-                            BrandifyDbConfiguration.SuspendExecutionStrategy = false;
+                            SuspendExecutionStrategy = false;
                         }
                     }).ConfigureAwait(false);
                 }
@@ -475,7 +475,8 @@ namespace EFSession.Session
             }
             else
             {
-                rowsAffected = await dbContext.SaveChangesAsync();
+                rowsAffected = await dbContext.SaveChangesAsync(cancellationToken)
+                                              .ConfigureAwait(false);
             }
 
             if (Hint.HasFlag(SessionHint.DisposeOnSave))
@@ -525,16 +526,16 @@ namespace EFSession.Session
 
         public void DisposeOffsprings(bool closeConnection = true)
         {
-            KeyValuePair<Owned<IDbSession>, DbContext> offspring;
+            KeyValuePair<IDbSession, IDbContext> offspring;
             while (offsprings.Any() && offsprings.TryDequeue(out offspring))
             {
-                if (offspring.Key.Value.IsActive)
+                if (offspring.Key.IsActive)
                 {
                     offspring.Key.Dispose();
                 }
             }
 
-            (dbContext as ICanPreserveConnection)?.ReleasePreservedConnection();
+            dbContext.ReleasePreservedConnection();
 
             if (closeConnection)
             {
@@ -576,10 +577,10 @@ namespace EFSession.Session
         {
             var result = OffspringSavingResult.Empty();
 
-            KeyValuePair<Owned<IDbSession>, DbContext> offspring;
+            KeyValuePair<IDbSession, IDbContext> offspring;
             while (offsprings.Any() && offsprings.TryDequeue(out offspring))
             {
-                if (!offspring.Key.Value.IsActive)
+                if (!offspring.Key.IsActive)
                 {
                     continue;
                 }
@@ -618,10 +619,10 @@ namespace EFSession.Session
             var saveChangesTasks = new List<Task>(offsprings.Count);
             var result = OffspringSavingResult.Empty();
 
-            KeyValuePair<Owned<IDbSession>, DbContext> offspring;
+            KeyValuePair<IDbSession, IDbContext> offspring;
             while (offsprings.Any() && offsprings.TryDequeue(out offspring))
             {
-                if (!offspring.Key.Value.IsActive)
+                if (!offspring.Key.IsActive)
                 {
                     continue;
                 }
@@ -685,7 +686,7 @@ namespace EFSession.Session
 
         private class OffspringSavingResult
         {
-            public Queue<KeyValuePair<Owned<IDbSession>, DbContext>> OffspringsBackupQueue { get; }
+            public Queue<KeyValuePair<IDbSession, IDbContext>> OffspringsBackupQueue { get; }
 
             public ConcurrentBag<Exception> Exceptions { get; }
 
@@ -693,7 +694,7 @@ namespace EFSession.Session
 
             private OffspringSavingResult()
             {
-                OffspringsBackupQueue = new Queue<KeyValuePair<Owned<IDbSession>, DbContext>>();
+                OffspringsBackupQueue = new Queue<KeyValuePair<IDbSession, IDbContext>>();
                 Exceptions = new ConcurrentBag<Exception>();
             }
 

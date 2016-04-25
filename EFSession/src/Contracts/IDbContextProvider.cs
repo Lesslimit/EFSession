@@ -1,12 +1,11 @@
 using System.Data.Common;
-using System.Data.Entity;
 
 namespace EFSession
 {
-    public interface IDbContextProvider
+    public interface IDbContextProvider<out TDbContext> where TDbContext : IDbContext
     {
-        DbContext ForSchema(string schema);
-        DbContext ForDbName(string dbName);
-        DbContext ForConnection(string schema, DbConnection connection);
+        TDbContext ForSchema(string schema);
+        TDbContext ForDbName(string dbName);
+        TDbContext ForConnection(string schema, DbConnection connection);
     }
 }

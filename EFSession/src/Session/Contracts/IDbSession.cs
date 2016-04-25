@@ -2,6 +2,7 @@ using System;
 using System.Data.SqlClient;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using EFSession.Queries;
 using EFSession.StoredProcedures;
 
 namespace EFSession.Session
@@ -36,6 +37,6 @@ namespace EFSession.Session
 
         TEntity Detach<TEntity>(TEntity entity) where TEntity : class;
 
-        void SetCommandTimeout(TimeSpan? timeout);
+        void SetTimeout(TimeSpan? timeout);
     }
 }

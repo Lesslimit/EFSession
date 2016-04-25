@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Data.Entity;
 using System.Linq;
 using EFSession.DataStructures.Collections;
 using EFSession.Extensions;
 using EFSession.Schema.Parameters.Contracts;
 using EFSession.Schema.Resolvers.Contracts;
-using EFSession.StoredProcedures;
 
 namespace EFSession.Session
 {
@@ -16,13 +14,11 @@ namespace EFSession.Session
 
         #region Fields
 
-        private readonly IDependencyResolver dependencyResolver;
-        private readonly IDbContextProvider dbContextProvider;
+        private readonly IDbContextProvider<IDbContext> dbContextProvider;
         private readonly IEnumerable<ISchemaResolver> schemaResolvers;
-        private readonly IDbExecutionPolicy execPolicy;
+        private readonly ISeedSessionProvider seedSessionProvider;
 
-        private readonly HashStack<Owned<ISeedSession<IDbSession>>> seedSessions =
-            new HashStack<Owned<ISeedSession<IDbSession>>>();
+        private readonly HashStack<IDbSeedSession<IDbSession>> seedSessions = new HashStack<IDbSeedSession<IDbSession>>();
 
         #endregion Fields
 
@@ -32,55 +28,43 @@ namespace EFSession.Session
         {
             get
             {
-                return seedSessions.Any(ss => ss.Value.Session.IsActive || ss.Value.Offsprings.Any(s => s.IsActive));
+                return seedSessions.Any(ss => ss.InnerSession.IsActive || ss.Offsprings.Any(s => s.IsActive));
             }
         }
 
         #endregion Properties
 
-        public DbSessionManager(IDependencyResolver dependencyResolver,
-                                IDbContextProvider dbContextProvider,
-                                IEnumerable<ISchemaResolver> schemaResolvers,
-                                IDbExecutionPolicy execPolicy)
+        public DbSessionManager(IDbContextProvider<IDbContext> dbContextProvider,
+                                ISeedSessionProvider seedSessionProvider,
+                                IEnumerable<ISchemaResolver> schemaResolvers)
         {
-            this.dependencyResolver = dependencyResolver;
             this.dbContextProvider = dbContextProvider;
             this.schemaResolvers = schemaResolvers;
-            this.execPolicy = execPolicy;
+            this.seedSessionProvider = seedSessionProvider;
         }
 
-        public ISeedSession<IDbSession> Start(ISchemaCriteria schema, SessionHint sessionHint = SessionHint.None)
+        public IDbSeedSession<IDbSession> Start(ISchemaCriteria schema, SessionHint sessionHint = SessionHint.None)
         {
             return Start(ResolveSchema(schema), sessionHint);
         }
 
-        public ISeedSession<IDbSession> Start(string schema, SessionHint sessionHint = SessionHint.None)
+        public IDbSeedSession<IDbSession> Start(string schema, SessionHint sessionHint = SessionHint.None)
         {
-            if (!dependencyResolver.IsRegistered<ISeedSession<IDbSession>>())
-            {
-                throw new InvalidOperationException("Please register `IDbSession` with IoC");
-            }
-
             var dbContext = sessionHint == SessionHint.SystemDb
                 ? dbContextProvider.ForDbName(SystemDbName)
                 : dbContextProvider.ForSchema(schema);
 
-            var sqlParametersManager = dependencyResolver.Resolve<ISqlParametersManager>();
-            var seedSession =
-                dependencyResolver.Resolve<Owned<ISeedSession<IDbSession>>>(new NamedParameter("schema", schema),
-                    new TypedParameter(typeof(ISqlParametersManager), sqlParametersManager),
-                    new TypedParameter(typeof(IDependencyResolver), dependencyResolver),
-                    new TypedParameter(typeof(DbContext), dbContext),
-                    new TypedParameter(typeof(IDbExecutionPolicy), execPolicy));
+            var seedSession = seedSessionProvider.ForSchema(schema)
+                                                 .Resolve<IDbSeedSession<IDbSession>>(dbContext);
 
             if (!seedSessions.Push(seedSession))
             {
                 throw new InvalidOperationException("Seed Sessions collision");
             }
 
-            seedSession.Value.Session.Begin(sessionHint);
+            seedSession.InnerSession.Begin(sessionHint);
 
-            return seedSession.Value;
+            return seedSession;
         }
 
         #region IDisposable
@@ -101,10 +85,10 @@ namespace EFSession.Session
         {
             if (isDisposing)
             {
-                Owned<ISeedSession<IDbSession>> seedSession;
+                IDbSeedSession<IDbSession> seedSession;
                 while (seedSessions.Any() && (seedSession = seedSessions.Pop()) != null)
                 {
-                    if (seedSession.Value.Session.IsActive)
+                    if (seedSession.InnerSession.IsActive)
                     {
                         seedSession.Dispose();
                     }

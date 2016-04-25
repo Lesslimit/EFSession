@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Reflection;
 using System.Reflection.Emit;
+using EFSession.Emit.Contracts;
 using EFSession.Extensions;
 
 namespace EFSession.Emit
 {
-    public delegate object ObjectConstructor<T>(params object[] args);
-
     public class DynamicReflectionDelegateFactory : ReflectionDelegateFactory
     {
         public static DynamicReflectionDelegateFactory Instance = new DynamicReflectionDelegateFactory();
